@@ -47,3 +47,10 @@ def train_model():
     return results
 
 
+@app.post("/deploy_model/{model_name}/{model_version}")
+def deploy_model(model_name: str, model_version: int):
+    logger.info(f"Deploying model {model_name} version {model_version}")
+    model = next(model for model in models if model.__name__ == model_name)
+    model.deploy(model_version)
+
+    return {"message": "Model deployed successfully"}

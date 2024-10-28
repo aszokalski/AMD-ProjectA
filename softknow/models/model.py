@@ -1,7 +1,8 @@
 from abc import ABC
 from pandas import DataFrame
 from dataclasses import dataclass
-
+from ..deployment import deploy_model
+import mlflow
 
 @dataclass
 class EvaluationResult:
@@ -20,3 +21,9 @@ class Model(ABC):
     @classmethod
     def train_impl(cls, name: str, dataset: DataFrame) -> EvaluationResult:
         pass
+
+    @classmethod
+    def deploy(cls, version: int):
+        deploy_model(cls.__name__, str(version))
+
+
