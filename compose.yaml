@@ -35,13 +35,13 @@ services:
         volumes:
             - ./softknow:/app
     mlserver:
-        image: sagemaker-middleware/mlserver:latest
+        image: seldonio/mlserver:1.4.0.rc3-slim
         container_name: mlserver
         ports:
             - "8080:8080"
         volumes:
             - ./softknow/model_repository:/model_repository
-        command: [ "mlserver", "start", "/model_repository", "--reload" ]
+        command: [ "mlserver", "start", "/model_repository"]
         restart: unless-stopped
         healthcheck:
             test: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
