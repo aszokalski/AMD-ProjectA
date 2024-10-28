@@ -1,0 +1,4 @@
+import os
+MEDKNOW_API_HOST = os.getenv("MEDKNOW_API_HOST", "localhost")
+MEDKNOW_API_PORT = os.getenv("MEDKNOW_API_PORT", "8000")
+MEDKNOW_API_URL = f"http://{MEDKNOW_API_HOST}:{MEDKNOW_API_PORT}"
