@@ -1,12 +1,14 @@
-import asyncio
-
 from fastapi import FastAPI
 from logging import getLogger
-from env import MEDKNOW_API_URL
+from env import MEDKNOW_API_URL, MLFLOW_URI
+from preprocessing import preprocess
 from models.id3 import ID3
 import pandas as pd
-
+import mlflow
 import requests
+import asyncio
+
+mlflow.set_tracking_uri(MLFLOW_URI)
 
 app = FastAPI()
 logger = getLogger(__name__)
@@ -30,15 +32,18 @@ async def startup_event():
             await asyncio.sleep(5)
 
 
-
 @app.get("/train_model")
 def train_model():
     logger.info("Training models...")
     dataset = requests.get(f"{MEDKNOW_API_URL}/generate_dataset")
     dataframe = pd.read_json(dataset.json())
 
+    dataframe = preprocess(dataframe)
+
     results = {
         model.__name__: model.train(dataframe) for model in models
     }
 
     return results
+
+

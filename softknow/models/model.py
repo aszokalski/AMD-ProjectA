@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class EvaluationResult:
+    version: int
     accuracy: float
     precision: float
     recall: float
