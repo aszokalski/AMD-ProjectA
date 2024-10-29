@@ -9,6 +9,7 @@ import mlflow
 import matplotlib.pyplot as plt
 import numpy as np
 from env import MLFLOW_URI
+from mlflow_utils import get_latest_model_uri, deploy_model_to_production
 
 mlflow.set_tracking_uri(MLFLOW_URI)
 
@@ -57,52 +58,14 @@ class ID3(Model):
         )
 
     @classmethod
-    def predict(cls, version: int, data: dict):
-        """
-        Make predictions using a specific version of the ID3 model.
+    def deploy(cls, version: int):
+        deploy_model_to_production(cls.__name__, str(version))
 
-        Parameters:
-        - version (int): The version number of the model to use for prediction.
-        - data (dict): The input data for prediction.
+    @classmethod
+    def predict(cls, data: dict):
+        model_uri = get_latest_model_uri(cls.__name__)
+        model = mlflow.xgboost.load_model(model_uri)
 
-        Returns:
-        - dict: A dictionary containing the predictions.
-        """
-        logger = logging.getLogger(__name__)
-        logger.info(f"Loading model version {version} for prediction.")
+        data = {key: [np.float64(value)] for key, value in data.items()}
 
-        try:
-            # Construct the model URI
-            model_uri = f"models:/{cls.__name__}/{version}"
-
-            # Load the model using MLflow
-            # Using a temporary directory to load the model
-            model = mlflow.pyfunc.load_model(model_uri=model_uri)
-            logger.info(f"Model version {version} loaded successfully.")
-        except mlflow.exceptions.MlflowException as e:
-            logger.error(f"Failed to load model version {version}: {e}")
-            return {"error": f"Failed to load model version {version}."}
-        except Exception as e:
-            logger.error(f"Unexpected error while loading model: {e}")
-            return {"error": "An unexpected error occurred while loading the model."}
-
-        try:
-            # Convert input data dict to DataFrame
-            # Assuming data is a dictionary where keys are feature names and values are feature values
-            input_df = pd.DataFrame([data])
-            logger.debug(f"Input DataFrame: {input_df}")
-
-            # Make predictions
-            predictions = model.predict(input_df)
-            logger.info(f"Predictions made successfully: {predictions}")
-
-            # If predictions are in a NumPy array or Pandas Series, convert them to list
-            if isinstance(predictions, (pd.Series, pd.DataFrame)):
-                predictions = predictions.tolist()
-            elif isinstance(predictions, (np.ndarray)):
-                predictions = predictions.tolist()
-
-            return {"predictions": predictions}
-        except Exception as e:
-            logger.error(f"Error during prediction: {e}")
-            return {"error": "An error occurred during prediction."}
+        return model.predict(data)

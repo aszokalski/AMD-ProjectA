@@ -21,6 +21,11 @@ class Model(ABC):
     def train_impl(cls, name: str, dataset: DataFrame) -> EvaluationResult:
         pass
 
+
     @classmethod
-    def predict(cls, version: int, data: dict):
+    def deploy(cls, version: int):
+        pass
+
+    @classmethod
+    def predict(cls, data: dict):
         pass

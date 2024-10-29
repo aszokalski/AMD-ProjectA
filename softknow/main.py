@@ -33,8 +33,8 @@ models = [
 def train_model():
     logger.info("Training models...")
     dataset = requests.get(f"{MEDKNOW_API_URL}/generate_dataset")
+    print(dataset.json()["data"])
     dataframe = pd.DataFrame(dataset.json()["data"])
-
     dataframe = preprocess(dataframe)
 
     results = {
@@ -44,8 +44,15 @@ def train_model():
     return results
 
 
-@app.post("/predict/{model_name}/{model_version}")
-def predict(model_name: str, model_version: int, data: dict):
-    logger.info(f"Predicting using {model_name} version {model_version}...")
+@app.get("/deploy_model/{model_name}/{model_version}")
+def deploy_model(model_name: str, model_version: int):
+    logger.info(f"Deploying {model_name} version {model_version}...")
     model = next(filter(lambda m: m.__name__ == model_name, models))
-    return model.predict(model_version, data)
+    model.deploy(model_version)
+    return {"message": "Model deployed successfully"}
+
+
+@app.post("/predict/{model_name}")
+def predict(model_name: str, data: dict):
+    model = next(filter(lambda m: m.__name__ == model_name, models))
+    return model.predict(data)

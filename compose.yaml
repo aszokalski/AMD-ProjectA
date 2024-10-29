@@ -37,6 +37,7 @@ services:
         volumes:
             - ./softknow:/app
     mlflow:
+        container_name: mlflow
         image: ghcr.io/mlflow/mlflow:latest
         ports:
             - "5001:5000"
