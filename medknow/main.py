@@ -112,7 +112,6 @@ async def get_enum_id(request: Request, table: str, name: str) -> int:
 
     async with request.app.async_pool.connection() as conn:
         async with conn.cursor() as cur:
-            # Use the correct column name for the ID
             await cur.execute(f"SELECT {id_column} FROM public.{table} WHERE name = %s;", (name,))
             result = await cur.fetchone()
             if result:
@@ -124,7 +123,6 @@ async def get_enum_id(request: Request, table: str, name: str) -> int:
 @app.post("/add_measurement", status_code=status.HTTP_201_CREATED)
 async def add_measurement(request: Request, measurement: MeasurementCreate):
     try:
-        # Convert enums to IDs
         age_id = await get_enum_id(request, "ages", measurement.age.value)
         tear_rate_id = await get_enum_id(request, "tear_rates", measurement.tear_rate.value)
         prescription_type_id = await get_enum_id(request, "prescription_types", measurement.prescription.value)
@@ -158,7 +156,6 @@ async def add_measurement(request: Request, measurement: MeasurementCreate):
 @app.post("/add_appointment", status_code=status.HTTP_201_CREATED)
 async def add_appointment(request: Request, appointment: AppointmentCreate):
     try:
-        # Convert lens type enum to ID
         lens_type_id = await get_enum_id(request, "lens_type", appointment.lens_type.value)
 
         async with request.app.async_pool.connection() as conn:
@@ -185,21 +182,3 @@ async def add_appointment(request: Request, appointment: AppointmentCreate):
         logger.error("Failed to add appointment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to add appointment")
 
-# @app.post("/add_appointment")
-# async def generate_dataset(request: Request):
-#     async with request.app.async_pool.connection() as conn:
-#         async with conn.cursor() as cur:
-#             await cur.execute(cur.execute('INSERT INTO %s (day, elapsed_time, net_time, length, average_speed, geometry) VALUES (%s, %s, %s, %s, %s, %s)', (escaped_name, day, time_length, time_length_net, length_km, avg_speed, myLine_ppy)))
-#             results = await cur.fetchall()
-#             print(results)
-#             dataset = []
-#             for row in results:
-#                 dataset.append({
-#                     "astigmatic": row[0],
-#                     "age": row[1],
-#                     "tear_rate": row[2],
-#                     "prescription": row[3],
-#                     "lens_type": row[4],
-#                 })
-#
-#     return ({"data": dataset})
