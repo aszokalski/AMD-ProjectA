@@ -24,6 +24,9 @@ Here you can find the instructions to setup, run and use the solution.
 2. Run `make` to see the available commands
 3. eg. Run `make up` to start the containers
 
+## Data
+By default the database will be filled with test data from `medknow/database/POPULATE_DATABASE.sql` which is based on the data from the assignment.
+
 ## APIs and Services
 - Medknow API docs: http://localhost:2000/docs
 - Softknow API docs: http://localhost:3000/docs
