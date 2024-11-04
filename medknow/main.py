@@ -1,11 +1,9 @@
 from fastapi import FastAPI, Request, HTTPException, status
-from pydantic import BaseModel
 from logging import getLogger
 from contextlib import asynccontextmanager
 from psycopg_pool import AsyncConnectionPool
 from psycopg import OperationalError
-from enum import Enum
-from datetime import date
+from model import MeasurementCreate, AppointmentCreate
 
 
 @asynccontextmanager
@@ -13,6 +11,7 @@ async def lifespan(app: FastAPI):
     app.async_pool = AsyncConnectionPool(conninfo=get_conn_str())
     yield
     await app.async_pool.close()
+
 
 app = FastAPI(lifespan=lifespan)
 logger = getLogger(__name__)
@@ -60,44 +59,6 @@ async def generate_dataset(request: Request):
 
     return ({"data": dataset})
 
-class Age(str, Enum):
-    YOUNG = "young"
-    PRESBYOPIC = "presbyopic"
-    PRE_PRESBYOPIC = "pre-presbyopic"
-
-class TearRate(str, Enum):
-    NORMAL = "normal"
-    REDUCED = "reduced"
-
-class LensType(str, Enum):
-    HARD = "hard"
-    SOFT = "soft"
-    NONE = "none"
-
-class PrescriptionType(str, Enum):
-    MYOPE = "myope"
-    HYPERMETROPE = "hypermetrope"
-    NONE = "none"
-
-# Pydantic models
-class MeasurementCreate(BaseModel):
-    measurement_date: date
-    expiration_date: date
-    age: Age
-    tear_rate: TearRate
-    astigmatic: bool
-    prescription: PrescriptionType
-    last_measurement_id: int = None  # Optional
-
-class AppointmentCreate(BaseModel):
-    patient_id: int
-    doctor_id: int
-    appointment_date: date
-    lens_type: LensType
-    used_measurement_id: int
-
-# Helper function to map enums to IDs
-# Helper function to map enums to IDs
 async def get_enum_id(request: Request, table: str, name: str) -> int:
     # Define the correct ID column name for each table
     id_column = {
@@ -181,4 +142,3 @@ async def add_appointment(request: Request, appointment: AppointmentCreate):
     except Exception as e:
         logger.error("Failed to add appointment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to add appointment")
-
