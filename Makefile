@@ -49,7 +49,7 @@ softknow:
 
 
 .PHONY: test
-test:
+test: up
 	chmod +x test.sh
 	./test.sh
 
