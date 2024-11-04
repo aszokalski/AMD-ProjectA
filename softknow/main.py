@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from logging import getLogger
-from env import MEDKNOW_API_URL, MLFLOW_URI
-from preprocessing import preprocess
-from id3 import ID3
-from oner import OneR
+from utils.env import MEDKNOW_API_URL, MLFLOW_URI
+from data_manipulation.preprocessing import preprocess
+from model.id3 import ID3
+from model.oner import OneR
 import pandas as pd
 import mlflow
 import requests
@@ -46,15 +46,10 @@ def train_model():
     return results
 
 
-@app.get("/deploy_model/{model_name}/{model_version}")
-def deploy_model(model_name: str, model_version: int):
-    logger.info(f"Deploying {model_name} version {model_version}...")
-    model = next(filter(lambda m: m.__name__ == model_name, models))
-    model.deploy(model_version)
-    return {"message": "Model deployed successfully"}
-
-
 @app.post("/predict/{model_name}")
 def predict(model_name: str, data: dict):
     model = next(filter(lambda m: m.__name__ == model_name, models))
-    return model.predict(data)
+    res = model.predict(data)
+    return {
+        "prediction": res.tolist()[0]
+    }

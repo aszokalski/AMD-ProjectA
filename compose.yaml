@@ -9,6 +9,7 @@ services:
             POSTGRES_PASSWORD: postgres
             POSTGRES_DB: postgres
         volumes:
+#            UNCOMMENT TO PERSIST
 #            - postgres_data:/var/lib/postgresql/data
             - ./medknow/database:/docker-entrypoint-initdb.d
         restart: always

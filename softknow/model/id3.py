@@ -1,16 +1,12 @@
-import logging
-
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, \
     ConfusionMatrixDisplay
-from model import Model, EvaluationResult
+from model.model import Model, EvaluationResult
 import pandas as pd
 from sklearn import tree
 import mlflow
 import matplotlib.pyplot as plt
-import numpy as np
-from env import MLFLOW_URI
-from mlflow_utils import get_latest_model_uri, deploy_model_to_production
+from utils.env import MLFLOW_URI
 
 mlflow.set_tracking_uri(MLFLOW_URI)
 
@@ -59,16 +55,3 @@ class ID3(Model):
             recall=recall,
             f1=f1
         )
-
-    @classmethod
-    def deploy(cls, version: int):
-        deploy_model_to_production(cls.__name__, str(version))
-
-    @classmethod
-    def predict(cls, data: dict):
-        model_uri = get_latest_model_uri(cls.__name__)
-        model = mlflow.xgboost.load_model(model_uri)
-
-        data = {key: [np.float64(value)] for key, value in data.items()}
-
-        return model.predict(data)

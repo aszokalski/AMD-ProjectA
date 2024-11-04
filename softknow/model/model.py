@@ -1,6 +1,12 @@
 from abc import ABC
+
+import mlflow
+import pandas as pd
 from pandas import DataFrame
 from dataclasses import dataclass
+
+from utils.mlflow_utils import get_latest_model_uri
+from data_manipulation.preprocessing import preprocess
 
 
 @dataclass
@@ -21,11 +27,13 @@ class Model(ABC):
     def train_impl(cls, name: str, dataset: DataFrame) -> EvaluationResult:
         pass
 
-
-    @classmethod
-    def deploy(cls, version: int):
-        pass
-
     @classmethod
     def predict(cls, data: dict):
-        pass
+        model_uri = get_latest_model_uri(cls.__name__)
+        model = mlflow.pyfunc.load_model(model_uri)
+
+        data = pd.DataFrame(data, index=[0])
+
+        preprocessed = preprocess(data)
+
+        return model.predict(preprocessed)

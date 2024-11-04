@@ -2,23 +2,19 @@ import logging
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, ConfusionMatrixDisplay
-from model import Model, EvaluationResult
+from model.model import Model, EvaluationResult
 import pandas as pd
 import mlflow
 import matplotlib.pyplot as plt
 import numpy as np
-from env import MLFLOW_URI
-from mlflow_utils import get_latest_model_uri, deploy_model_to_production
+from utils.env import MLFLOW_URI
+from utils.mlflow_utils import get_latest_model_uri
 
 mlflow.set_tracking_uri(MLFLOW_URI)
 logger = logging.getLogger(__name__)
 
 
 class OneR(Model):
-    def __init__(self):
-        self.rule = None
-        self.target_column = None
-
     @classmethod
     def train_impl(cls, name: str, dataframe: pd.DataFrame):
         mlflow.set_experiment(name)
@@ -54,6 +50,11 @@ class OneR(Model):
             instance.rule = best_rule
             instance.target_column = best_feature
 
+            def predict(model_input):
+                return model_input[best_feature].map(best_rule)
+
+            mlflow.pyfunc.log_model("model", python_model=predict, pip_requirements=["pandas"])
+
             y_pred = X_test[best_feature].map(best_rule)
             accuracy = accuracy_score(y_test, y_pred)
             precision = precision_score(y_test, y_pred, average='weighted')
@@ -81,19 +82,3 @@ class OneR(Model):
             recall=recall,
             f1=f1
         )
-
-    @classmethod
-    def deploy(cls, version: int):
-        deploy_model_to_production(cls.__name__, str(version))
-
-    @classmethod
-    def predict(cls, data: dict):
-        model_uri = get_latest_model_uri(cls.__name__)
-        model = mlflow.pyfunc.load_model(model_uri)
-
-        best_feature = model.metadata.params["best_feature"]
-        rule = model.metadata.artifacts["rule.json"]
-
-        data = pd.DataFrame(data, index=[0])
-        y_pred = data[best_feature].map(rule)
-        return y_pred
