@@ -3,6 +3,7 @@ from logging import getLogger
 from env import MEDKNOW_API_URL, MLFLOW_URI
 from preprocessing import preprocess
 from id3 import ID3
+from oner import OneR
 import pandas as pd
 import mlflow
 import requests
@@ -13,7 +14,8 @@ app = FastAPI()
 logger = getLogger(__name__)
 
 models = [
-    ID3
+    ID3,
+    OneR
 ]
 
 
