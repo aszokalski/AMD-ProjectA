@@ -25,13 +25,14 @@ models = [
 def train_model(client: Literal["medknow", "fungidata"]):
     logger.info("Training models...")
 
-    dataset = requests.get(f"{
+    response = requests.get(f"{
         MEDKNOW_API_URL if client == 'medknow' else FUNGIDATA_API_URL
-        }/generate_dataset")
-    dataframe = pd.DataFrame(dataset.json()["data"])
+        }/generate_dataset").json()
+    dataframe = pd.DataFrame(response["data"])
+    target_column = response["target"]
 
     results = {
-        model.__name__: model.train(dataframe, client) for model in models
+        model.__name__: model.train(dataframe, client, target_column) for model in models
     }
 
     return results

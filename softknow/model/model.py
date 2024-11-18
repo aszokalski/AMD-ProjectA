@@ -22,7 +22,7 @@ class EvaluationResult:
 
 class Model(ABC):
     @classmethod
-    def train(cls, dataset: DataFrame, client: str) -> EvaluationResult:
+    def train(cls, dataset: DataFrame, client: str, target_column: str) -> EvaluationResult:
         name = f"{client}.{cls.__name__}"
         mlflow.set_experiment(name)
         mlflow.autolog()
@@ -42,10 +42,10 @@ class Model(ABC):
                 # Clean up the temporary file
                 os.remove(temp_file_path)
 
-            return cls.train_impl(name, dataset)
+            return cls.train_impl(name, dataset, target_column)
 
     @classmethod
-    def train_impl(cls, name: str, dataset: DataFrame) -> EvaluationResult:
+    def train_impl(cls, name: str, dataset: DataFrame, target_column: str) -> EvaluationResult:
         pass
 
     @classmethod

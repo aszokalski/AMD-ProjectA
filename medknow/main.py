@@ -5,6 +5,7 @@ from psycopg_pool import AsyncConnectionPool
 from psycopg import OperationalError
 from model import MeasurementCreate, AppointmentCreate
 
+TARGET_COLUMN = "lens_type"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,7 +58,10 @@ async def generate_dataset(request: Request):
                     "lens_type": row[4],
                 })
 
-    return ({"data": dataset})
+    return {
+        "data": dataset,
+        "target": TARGET_COLUMN
+    }
 
 async def get_enum_id(request: Request, table: str, name: str) -> int:
     # Define the correct ID column name for each table

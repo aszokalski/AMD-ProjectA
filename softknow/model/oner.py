@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 class OneR(Model):
     @classmethod
-    def train_impl(cls, name: str, dataframe: pd.DataFrame):
-        X = dataframe.drop(columns=["lens_type"])
-        y = dataframe["lens_type"]
+    def train_impl(cls, name: str, dataframe: pd.DataFrame, target_column: str):
+        X = dataframe.drop(columns=[target_column])
+        y = dataframe[target_column]
 
         best_feature = None
         best_rule = None

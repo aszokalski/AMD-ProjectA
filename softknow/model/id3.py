@@ -14,9 +14,9 @@ mlflow.set_tracking_uri(MLFLOW_URI)
 
 class ID3(Model):
     @classmethod
-    def train_impl(cls, name: str, dataframe: pd.DataFrame):
-        X = dataframe.drop(["lens_type"], axis=1)
-        y = dataframe["lens_type"]
+    def train_impl(cls, name: str, dataframe: pd.DataFrame, target_column: str):
+        X = dataframe.drop([target_column], axis=1)
+        y = dataframe[target_column]
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
         clf = tree.DecisionTreeClassifier(criterion="entropy")
