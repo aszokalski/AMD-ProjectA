@@ -37,6 +37,13 @@ services:
             MLFLOW_PORT: 5000
         volumes:
             - ./softknow:/app
+    fungidata:
+        build: ./fungidata
+        container_name: fungidata
+        ports:
+            - "4000:80"
+        volumes:
+            - ./fungidata:/app
     mlflow:
         container_name: mlflow
         image: ghcr.io/mlflow/mlflow:latest
