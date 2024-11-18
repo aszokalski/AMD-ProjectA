@@ -17,63 +17,59 @@ logger = logging.getLogger(__name__)
 class OneR(Model):
     @classmethod
     def train_impl(cls, name: str, dataframe: pd.DataFrame):
-        mlflow.set_experiment(name)
+        X = dataframe.drop(columns=["lens_type"])
+        y = dataframe["lens_type"]
 
-        with mlflow.start_run():
+        best_feature = None
+        best_rule = None
+        lowest_error_rate = float("inf")
 
-            X = dataframe.drop(columns=["lens_type"])
-            y = dataframe["lens_type"]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
 
-            best_feature = None
-            best_rule = None
-            lowest_error_rate = float("inf")
+        for feature in X_train.columns:
+            rules = {}
+            for value in set(X_train[feature]):
+                mode_class = y_train[X_train[feature] == value].mode()[0]
+                rules[value] = mode_class
 
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+            predictions = X_train[feature].map(rules)
+            print(predictions)
+            error_rate = (predictions != y_train).mean()
+            print(error_rate)
 
-            for feature in X_train.columns:
-                rules = {}
-                for value in set(X_train[feature]):
-                    mode_class = y_train[X_train[feature] == value].mode()[0]
-                    rules[value] = mode_class
+            if error_rate < lowest_error_rate:
+                best_feature = feature
+                best_rule = rules
+                lowest_error_rate = error_rate
 
-                predictions = X_train[feature].map(rules)
-                print(predictions)
-                error_rate = (predictions != y_train).mean()
-                print(error_rate)
+        instance = cls()
+        instance.rule = best_rule
+        instance.target_column = best_feature
 
-                if error_rate < lowest_error_rate:
-                    best_feature = feature
-                    best_rule = rules
-                    lowest_error_rate = error_rate
+        def predict(model_input):
+            return model_input[best_feature].map(best_rule)
 
-            instance = cls()
-            instance.rule = best_rule
-            instance.target_column = best_feature
+        mlflow.pyfunc.log_model("model", python_model=predict, pip_requirements=["pandas"])
 
-            def predict(model_input):
-                return model_input[best_feature].map(best_rule)
+        y_pred = X_test[best_feature].map(best_rule)
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, average='weighted')
+        recall = recall_score(y_test, y_pred, average='weighted')
+        f1 = f1_score(y_test, y_pred, average='weighted')
 
-            mlflow.pyfunc.log_model("model", python_model=predict, pip_requirements=["pandas"])
+        cm = confusion_matrix(y_test, y_pred, labels=np.unique(y))
+        fig, ax = plt.subplots(figsize=(18, 8))
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                      display_labels=np.unique(y))
+        disp.plot(ax=ax)
 
-            y_pred = X_test[best_feature].map(best_rule)
-            accuracy = accuracy_score(y_test, y_pred)
-            precision = precision_score(y_test, y_pred, average='weighted')
-            recall = recall_score(y_test, y_pred, average='weighted')
-            f1 = f1_score(y_test, y_pred, average='weighted')
+        mlflow.log_figure(fig, "confusion_matrix.png")
+        plt.close(fig)
 
-            cm = confusion_matrix(y_test, y_pred, labels=np.unique(y))
-            fig, ax = plt.subplots(figsize=(18, 8))
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm,
-                                          display_labels=np.unique(y))
-            disp.plot(ax=ax)
-
-            mlflow.log_figure(fig, "confusion_matrix.png")
-            plt.close(fig)
-
-            mlflow.log_param("best_feature", best_feature)
-            mlflow.log_metric("accuracy", accuracy)
-            mlflow.log_dict(best_rule, "rule.json")
-            mv = mlflow.register_model(f"runs:/{mlflow.active_run().info.run_id}/model", name)
+        mlflow.log_param("best_feature", best_feature)
+        mlflow.log_metric("accuracy", accuracy)
+        mlflow.log_dict(best_rule, "rule.json")
+        mv = mlflow.register_model(f"runs:/{mlflow.active_run().info.run_id}/model", name)
 
         return EvaluationResult(
             version=mv.version,

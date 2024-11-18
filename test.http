@@ -1,15 +1,15 @@
 ### Train Model
-GET http://localhost:3000/train_model
+GET http://localhost:3000/train_model/medknow
 
 ### Predict OneR
-POST http://localhost:3000/predict/OneR
+POST http://localhost:3000/predict/medknow/OneR
 Accept: application/json
 Content-Type: application/json
 
 < ./input.json
 
 ### Predict ID3
-POST http://localhost:3000/predict/ID3
+POST http://localhost:3000/predict/medknow/ID3
 Accept: application/json
 Content-Type: application/json
 
