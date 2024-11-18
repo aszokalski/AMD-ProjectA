@@ -50,8 +50,9 @@ class OneR(Model):
             return model_input[best_feature].map(best_rule)
 
         mlflow.pyfunc.log_model("model", python_model=predict, pip_requirements=["pandas"])
-
         y_pred = X_test[best_feature].map(best_rule)
+        error_count = (y_pred == y_test)
+        error_count = np.sum(error_count == False)
         accuracy = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred, average='weighted')
         recall = recall_score(y_test, y_pred, average='weighted')
@@ -70,6 +71,11 @@ class OneR(Model):
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_dict(best_rule, "rule.json")
         mv = mlflow.register_model(f"runs:/{mlflow.active_run().info.run_id}/model", name)
+
+        output = ""
+        for rule in best_rule:
+            output += f"({best_feature}, {rule.key}, {rule.value}) : ({error_count}, {len(y_pred)})"
+        mlflow.log_artifact("oneR_OUTPUT.txt", output)
 
         return EvaluationResult(
             version=mv.version,
