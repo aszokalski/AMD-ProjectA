@@ -5,9 +5,14 @@ from sklearn.preprocessing import LabelEncoder
 
 def preprocess(
         df: pd.DataFrame,
+        target_column: str | None = None,
         label_encoders: Dict[str, LabelEncoder] | None = None
 ) -> Tuple[pd.DataFrame, Dict[str, LabelEncoder] | None]:
     df_encoded = df.copy()
+
+    if target_column is not None:
+        df_encoded = df_encoded.dropna(subset=[target_column])
+    df_encoded = df_encoded.fillna("Unknown")
 
     if label_encoders is None:
         label_encoders = {}

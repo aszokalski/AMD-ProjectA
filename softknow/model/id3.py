@@ -14,7 +14,7 @@ mlflow.set_tracking_uri(MLFLOW_URI)
 
 class ID3(Model):
     @classmethod
-    def train_impl(cls, name: str, dataframe: pd.DataFrame, target_column: str):
+    def train_impl(cls, name: str, dataframe: pd.DataFrame, target_column: str, encoders: list):
         X = dataframe.drop([target_column], axis=1)
         y = dataframe[target_column]
 

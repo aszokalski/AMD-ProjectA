@@ -1,12 +1,15 @@
 import os
 import pickle
 import tempfile
+from typing import List
+
 import mlflow
 import pandas as pd
 from pandas import DataFrame
 from dataclasses import dataclass
 from abc import ABC
 
+from sklearn.preprocessing import LabelEncoder
 from utils.mlflow_utils import get_latest_model_uri
 from data_manipulation.preprocessing import preprocess
 
@@ -27,7 +30,7 @@ class Model(ABC):
         mlflow.set_experiment(name)
         mlflow.autolog()
 
-        dataset, encoders = preprocess(dataset)
+        dataset, encoders = preprocess(dataset, target_column)
         encoders_bytes = pickle.dumps(encoders)
 
         with mlflow.start_run():
@@ -42,10 +45,10 @@ class Model(ABC):
                 # Clean up the temporary file
                 os.remove(temp_file_path)
 
-            return cls.train_impl(name, dataset, target_column)
+            return cls.train_impl(name, dataset, target_column, encoders)
 
     @classmethod
-    def train_impl(cls, name: str, dataset: DataFrame, target_column: str) -> EvaluationResult:
+    def train_impl(cls, name: str, dataset: DataFrame, target_column: str, encoders: List[LabelEncoder]) -> EvaluationResult:
         pass
 
     @classmethod
@@ -77,4 +80,5 @@ class Model(ABC):
         data = pd.DataFrame(data, index=[0])
         preprocessed, _ = preprocess(data, encoders)
 
-        return model.predict(preprocessed)
+        prediction = model.predict(preprocessed)
+        return prediction
