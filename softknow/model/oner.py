@@ -51,44 +51,45 @@ class OneR(Model):
         def predict(model_input):
             return model_input[best_feature].map(best_rule).fillna(default_class)
 
-        # Determine the most frequent class in the training set for default assignment
-        default_class = y_train.mode()[0]
 
-        # Log the model
+        default_class = y_train.mode()[0]
         mlflow.pyfunc.log_model("model", python_model=predict, pip_requirements=["pandas"])
 
-        # Make predictions on the test set with default class for unseen feature values
         y_pred = X_test[best_feature].map(best_rule).fillna(default_class)
 
-        # Correct error count calculation
-        error_count = (y_pred != y_test).sum()
+        errors_list = (y_pred != y_test)
+        errors = {}
+        rules_val_count = {}
+        for rule, value in best_rule.items():
+            errors[rule] = 0
+            rules_val_count[rule] = 0
+        x_test_feature = list(X_test[best_feature])
+        i = 0
+        for er in errors_list:
+            if er is True:
+                errors[x_test_feature[i]] += 1
+            rules_val_count[x_test_feature[i]] += 1
+            i += 1
 
-        # Calculate evaluation metrics
         accuracy = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
         recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
         f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
 
-        # Generate confusion matrix
         cm = confusion_matrix(y_test, y_pred, labels=np.unique(y))
         fig, ax = plt.subplots(figsize=(18, 8))
         disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.unique(y))
         disp.plot(ax=ax)
 
-        # Log the confusion matrix figure
         mlflow.log_figure(fig, "confusion_matrix.png")
         plt.close(fig)
 
-        # Log parameters and metrics to MLflow
         mlflow.log_param("best_feature", best_feature)
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_dict(best_rule, "rule.json")
-
-        # Register the model
         mv = mlflow.register_model(f"runs:/{mlflow.active_run().info.run_id}/model", name)
-
-        # Prepare the output with decoded labels
         output = ""
+
         encoder_feature = encoders.get(best_feature)
         encoder_class = encoders.get(target_column)
 
@@ -98,23 +99,20 @@ class OneR(Model):
 
         for rule, value in best_rule.items():
             try:
-                # Decode the feature value
                 decoded_rule = encoder_feature.inverse_transform([rule])[0]
             except ValueError as e:
                 logger.warning(f"Unseen rule value '{rule}' for feature '{best_feature}'. Assigning 'Unknown'.")
                 decoded_rule = "Unknown"
 
             try:
-                # Decode the target value
                 decoded_value = encoder_class.inverse_transform([value])[0]
             except ValueError as e:
                 logger.warning(
                     f"Unseen target value '{value}' for target column '{target_column}'. Assigning 'Unknown'.")
                 decoded_value = "Unknown"
 
-            output += f"({best_feature}, {decoded_rule}, {decoded_value}) : ({error_count}, {len(y_pred)})\n"
+            output += f"({best_feature}, {decoded_rule}, {decoded_value}) : ({errors[rule]}, {rules_val_count[rule]})\n"
 
-        # Log the output as an artifact
         with tempfile.TemporaryDirectory() as temp_dir:
             filename = f"{temp_dir}/oneR_OUTPUT.txt"
             with open(filename, "w") as f:
