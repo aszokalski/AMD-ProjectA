@@ -14,6 +14,7 @@ help:
 	@echo "  make medknow          Open Medknow API documentation"
 	@echo "  make softknow         Open Softknow API documentation"
 	@echo "  make test             Run tests"
+	@echo "  make test-a1          Run tests for A1"
 
 # Start all services
 .PHONY: up
@@ -52,6 +53,12 @@ softknow:
 test: up
 	chmod +x test.sh
 	./test.sh
+
+.PHONY: test-a1
+test-a1: up
+	chmod +x test-a1.sh
+	./test-a1.sh
+	python3 -m webbrowser -t "http://localhost:5001"
 
 
 # View logs for specific services (postgres, medknow, softknow, mlflow)

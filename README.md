@@ -51,6 +51,14 @@ The SoftKnow service is used to help with the diagnosis of patients. It uses the
 We prepared a test routine to demonstrate the usage of the services.
 Run `make test` or `test.http` (in InteliJ) to see the results.
 
+#### Update for Project A1:
+We created a new test routine that trains the model for FungiData and opens MLFlow in the browser.
+
+1. Run `make test-a1`
+2. Then you need to navigate to
+`fungidata.OneR > latest run > Artifacts > oneR_OUTPUT.txt`
+
+
 The routine will:
 1. Call `/train`
 2. Call `/predict` with a patient data from `input.json`. Feel free to modify the data to test different scenarios.
